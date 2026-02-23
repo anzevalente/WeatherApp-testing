@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="sl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vreme Maribor, Ljubljana in vsa Slovenija | PureCast Napoved</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="PureCastlogo2-removebg.png">
+
+    <!-- SEO & Meta Tags -->
+    <meta name="description"
+        content="Preverite najbolj natančno vremensko napoved za vaš kraj (Maribor, Ljubljana, Celje, Kranj, Koper...). 10-dnevna napoved, časovni stroj po urah in pametni nasveti z aplikacijo PureCast.">
+    <meta name="keywords"
+        content="vreme, vreme Maribor, vreme Ljubljana, vreme Celje, vreme Kranj, vreme Koper, vremenska napoved, Slovenija, PureCast, vreme po urah, zanesljiva napoved, radar padavin, natančno vreme">
+    <meta name="author" content="PureCast Developer">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="Slovenian">
+
+    <!-- Open Graph (Facebook, LinkedIn) -->
+    <meta property="og:title" content="Vreme Maribor, Ljubljana in Slovenija | PureCast">
+    <meta property="og:description"
+        content="Spremljajte najbolj natančno in interaktivno vremensko napoved za vaš kraj s prikazom po urah in 10-dnevnim trendom!">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://purecast.si">
+    <meta property="og:site_name" content="PureCast Weather">
+    <meta property="og:image" content="https://purecast.si/og-image.jpg">
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Vreme Maribor, Ljubljana in Slovenija | PureCast">
+    <meta name="twitter:description"
+        content="Natančna, resnično lepa in interaktivna vremenska aplikacija za vaš kraj (Maribor, Ljubljana...).">
+    <meta name="twitter:image" content="https://purecast.si/og-image.jpg">
+
+    <!-- JSON-LD Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "PureCast",
+      "url": "https://purecast.si",
+      "description": "Natančna vremenska napoved za Slovenijo (Maribor, Ljubljana, Celje, Kranj...).",
+      "applicationCategory": "WeatherApplication",
+      "operatingSystem": "All",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      }
+    }
+    </script>
+
+    <!-- Security: Content Security Policy (CSP) -->
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com; img-src 'self' data: https:; font-src 'self' data:;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        glass: 'rgba(255, 255, 255, 0.15)',
+                        glassDark: 'rgba(0, 0, 0, 0.25)',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body id="app-body"
+    class="antialiased min-h-screen sm:h-screen overflow-y-auto sm:overflow-hidden transition-colors duration-1000 bg-gray-900 text-white flex items-start sm:items-center justify-center p-2 sm:p-4">
+
+    <!-- Hidden Semantic H1 (Highly Optimized for Search Engines) -->
+    <h1 class="sr-only">Vreme Maribor, Ljubljana, Celje in natančna vremenska napoved za celotno Slovenijo - PureCast
+    </h1>
+
+    <div
+        class="glassmorphism w-full max-w-5xl md:max-h-full rounded-3xl p-4 sm:p-6 shadow-2xl relative flex flex-col gap-4 mx-auto my-0 sm:my-auto overflow-y-visible sm:overflow-hidden min-h-full">
+        <!-- Header / Search -->
+        <header class="flex flex-col sm:flex-row justify-between items-center gap-2 z-50 w-full relative shrink-0">
+            <div class="flex items-center gap-2 text-2xl font-bold tracking-tight">
+                <img src="PureCastlogo2-removebg.png" alt="PureCast Logo" class="h-10 sm:h-12 w-auto drop-shadow-md">
+                <span class="hidden sm:block font-logo text-[1.75rem] tracking-tight drop-shadow-md">
+                    <span class="text-white font-semibold">Pure</span><span
+                        class="text-[#60A5FA] font-light">Cast</span>
+                </span>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <form id="search-form"
+                    class="relative w-full sm:w-80 flex items-center shadow-lg rounded-full shrink-0">
+                    <i data-lucide="search" class="w-5 h-5 absolute left-4 text-white/70"></i>
+                    <input type="text" id="search-input" placeholder="Išči kraj..." autocomplete="off"
+                        aria-label="Išči mesto ali kraj za vremensko napoved"
+                        class="w-full bg-white/20 border border-white/20 rounded-full py-2 pl-12 pr-12 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/70 transition-all backdrop-blur-sm">
+                    <button type="button" id="btn-location"
+                        class="absolute right-2 p-1.5 rounded-full hover:bg-white/20 transition-colors"
+                        title="Uporabi mojo trenutno lokacijo" aria-label="Uporabi mojo trenuto lokacijo">
+                        <i data-lucide="map-pin" class="w-5 h-5 text-white"></i>
+                    </button>
+                    <!-- Search Results Dropdown -->
+                    <ul id="search-results"
+                        class="absolute top-12 left-0 w-full bg-gray-800 rounded-2xl border border-gray-600 overflow-hidden hidden z-50 shadow-2xl">
+                    </ul>
+                </form>
+            </div>
+        </header>
+
+        <!-- Loading / Error States -->
+        <div id="loading-state" class="flex flex-col items-center justify-center py-10 sm:py-20 z-10 flex-grow">
+            <i data-lucide="loader-2" class="w-12 h-12 animate-spin text-white mb-4"></i>
+            <p class="text-sm sm:text-lg text-white/90 animate-pulse font-medium">Pridobivam najnovejše podatke...</p>
+        </div>
+
+        <div id="error-state"
+            class="items-center justify-center p-4 bg-red-500/20 border border-red-500/50 rounded-xl z-10 hidden backdrop-blur-sm">
+            <i data-lucide="triangle-alert" class="w-6 h-6 text-red-200 mr-2"></i>
+            <p id="error-message" class="text-xs sm:text-sm text-red-100 font-medium"></p>
+        </div>
+
+        <!-- Main Content -->
+        <main id="weather-content"
+            class="flex-col gap-4 z-10 hidden fade-in h-auto sm:h-full flex-grow text-sm sm:text-base pr-1 sm:pr-0 pb-4 sm:pb-0">
+            <!-- Top Section: Current Weather & Info -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center shrink-0">
+                <div class="flex items-center justify-center sm:justify-start gap-4 text-center sm:text-left">
+                    <div id="current-icon-container"
+                        class="p-4 bg-white/10 rounded-full shadow-inner border border-white/10 shrink-0">
+                        <i id="current-icon" data-lucide="sun"
+                            class="w-16 h-16 sm:w-20 sm:h-20 text-yellow-400 drop-shadow-2xl"></i>
+                    </div>
+                    <div class="flex flex-col justify-center">
+                        <h2 id="city-name"
+                            class="text-3xl sm:text-4xl font-extrabold tracking-wide mb-1 drop-shadow-md">Nalaganje...
+                        </h2>
+                        <p id="current-desc"
+                            class="text-lg sm:text-xl text-white/90 capitalize mb-1 font-light tracking-wide">
+                            Pripravljam</p>
+                        <!-- Wardrobe Advisor -->
+                        <div id="wardrobe-card"
+                            class="flex items-center gap-2 bg-gradient-to-r from-white/20 to-transparent px-3 py-1.5 rounded-xl border border-white/10 backdrop-blur-md mb-2 w-fit shadow-sm cursor-pointer hover:bg-white/30 transition-colors"
+                            title="Več informacij">
+                            <i id="wardrobe-icon" data-lucide="shirt" class="w-4 h-4 text-pink-200 drop-shadow"></i>
+                            <span id="wardrobe-text"
+                                class="text-xs sm:text-sm font-medium drop-shadow-sm text-white/95">Analiziram...</span>
+                        </div>
+                        <div class="flex items-center justify-center sm:justify-start gap-4">
+                            <span id="current-temp"
+                                class="text-5xl sm:text-6xl font-black drop-shadow-xl tracking-tight">--°</span>
+                            <div
+                                class="flex flex-col text-sm sm:text-base text-white/90 font-medium gap-1 bg-white/10 px-3 py-1 rounded-2xl border border-white/10 backdrop-blur-md">
+                                <span class="flex items-center gap-1 drop-shadow"><i data-lucide="arrow-up"
+                                        class="w-4 h-4 text-red-300"></i> <span id="max-temp">--°</span></span>
+                                <span class="flex items-center gap-1 drop-shadow"><i data-lucide="arrow-down"
+                                        class="w-4 h-4 text-blue-300"></i> <span id="min-temp">--°</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Details Grid -->
+                <div class="grid grid-cols-3 gap-2 sm:gap-3">
+                    <div
+                        class="bg-white/5 border border-white/10 backdrop-blur-md p-2 sm:p-3 rounded-2xl flex flex-col items-center justify-center text-center">
+                        <i data-lucide="droplets" class="w-5 h-5 sm:w-6 sm:h-6 text-blue-200 mb-1 drop-shadow"></i>
+                        <span class="text-[10px] sm:text-xs text-white/70 font-medium mb-1">Vlažnost</span>
+                        <span id="current-humidity" class="text-sm sm:text-base font-bold drop-shadow">--%</span>
+                    </div>
+                    <div
+                        class="bg-white/5 border border-white/10 backdrop-blur-md p-2 sm:p-3 rounded-2xl flex flex-col items-center justify-center text-center">
+                        <i data-lucide="wind" class="w-5 h-5 sm:w-6 sm:h-6 text-gray-200 mb-1 drop-shadow"></i>
+                        <span class="text-[10px] sm:text-xs text-white/70 font-medium mb-1">Veter</span>
+                        <span id="current-wind" class="text-sm sm:text-base font-bold drop-shadow">-- km/h</span>
+                    </div>
+                    <div
+                        class="bg-white/5 border border-white/10 backdrop-blur-md p-2 sm:p-3 rounded-2xl flex flex-col items-center justify-center text-center">
+                        <i data-lucide="sun-dim" class="w-5 h-5 sm:w-6 sm:h-6 text-yellow-200 mb-1 drop-shadow"></i>
+                        <span class="text-[10px] sm:text-xs text-white/70 font-medium mb-1">UV Indeks</span>
+                        <span id="current-uv" class="text-sm sm:text-base font-bold drop-shadow">--</span>
+                    </div>
+                    <div
+                        class="bg-white/5 border border-white/10 backdrop-blur-md p-2 sm:p-3 rounded-2xl flex flex-col items-center justify-center text-center">
+                        <i data-lucide="cloud-rain" class="w-5 h-5 sm:w-6 sm:h-6 text-blue-300 mb-1 drop-shadow"></i>
+                        <span class="text-[10px] sm:text-xs text-white/70 font-medium mb-1">Padavine</span>
+                        <span id="current-precip" class="text-sm sm:text-base font-bold drop-shadow">0 mm</span>
+                    </div>
+                    <div
+                        class="bg-white/5 border border-white/10 backdrop-blur-md p-2 sm:p-3 rounded-2xl flex flex-col items-center justify-center text-center">
+                        <i data-lucide="sunrise" class="w-5 h-5 sm:w-6 sm:h-6 text-orange-300 mb-1 drop-shadow"></i>
+                        <span class="text-[10px] sm:text-xs text-white/70 font-medium mb-1">Vzhod</span>
+                        <span id="current-sunrise" class="text-sm sm:text-base font-bold drop-shadow">--:--</span>
+                    </div>
+                    <div
+                        class="bg-white/5 border border-white/10 backdrop-blur-md p-2 sm:p-3 rounded-2xl flex flex-col items-center justify-center text-center">
+                        <i data-lucide="sunset" class="w-5 h-5 sm:w-6 sm:h-6 text-red-300 mb-1 drop-shadow"></i>
+                        <span class="text-[10px] sm:text-xs text-white/70 font-medium mb-1">Zahod</span>
+                        <span id="current-sunset" class="text-sm sm:text-base font-bold drop-shadow">--:--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Info Row: Hobby & Astro -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 shrink-0">
+                <!-- Vrtičkarski alarm -->
+                <div id="card-frost"
+                    class="glass-card p-2 sm:p-2.5 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer hover:bg-white/20 transition-colors"
+                    title="Več informacij">
+                    <i data-lucide="leaf" class="w-5 h-5 sm:w-6 sm:h-6 text-green-300 mb-1 drop-shadow"></i>
+                    <span class="text-[10px] sm:text-xs text-white/70 font-medium mb-0.5">Vrtičkarji</span>
+                    <span id="hobby-frost" class="text-[11px] sm:text-xs font-bold drop-shadow leading-tight">--</span>
+                </div>
+                <!-- Indeks za sušenje -->
+                <div id="card-drying"
+                    class="glass-card p-2 sm:p-2.5 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer hover:bg-white/20 transition-colors"
+                    title="Več informacij">
+                    <i data-lucide="wind" class="w-5 h-5 sm:w-6 sm:h-6 text-blue-200 mb-1 drop-shadow"></i>
+                    <span class="text-[10px] sm:text-xs text-white/70 font-medium mb-0.5">Sušenje perila</span>
+                    <span id="hobby-drying" class="text-[11px] sm:text-xs font-bold drop-shadow leading-tight">--</span>
+                </div>
+                <!-- Pohodniški semafor -->
+                <div id="card-hiking"
+                    class="glass-card p-2 sm:p-2.5 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer hover:bg-white/20 transition-colors"
+                    title="Več informacij">
+                    <i id="hobby-hiking-icon" data-lucide="mountain"
+                        class="w-5 h-5 sm:w-6 sm:h-6 text-amber-300 mb-1 drop-shadow"></i>
+                    <span class="text-[10px] sm:text-xs text-white/70 font-medium mb-0.5">V Hribe?</span>
+                    <span id="hobby-hiking" class="text-[11px] sm:text-xs font-bold drop-shadow leading-tight">--</span>
+                </div>
+                <!-- Astro Kotiček -->
+                <div id="card-astro"
+                    class="glass-card p-2 sm:p-2.5 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer hover:bg-white/20 transition-colors"
+                    title="Več informacij">
+                    <i data-lucide="camera" class="w-5 h-5 sm:w-6 sm:h-6 text-indigo-300 mb-1 drop-shadow"></i>
+                    <span class="text-[10px] sm:text-xs text-white/70 font-medium mb-0.5">Zlata Ura</span>
+                    <span id="astro-info" class="text-[11px] sm:text-xs font-bold drop-shadow leading-tight">--</span>
+                </div>
+            </div>
+
+            <!-- Middle Section: Time Travel & 24 Hours Chart -->
+            <div class="glass-card p-3 sm:p-4 rounded-3xl shrink-0">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-4 gap-2">
+                    <h3 class="text-sm sm:text-base font-semibold flex items-center gap-2 drop-shadow">
+                        <i data-lucide="fast-forward" class="w-4 h-4 sm:w-5 sm:h-5 text-blue-200"></i>
+                        Časovni Stroj <span id="time-travel-label"
+                            class="text-xs font-normal opacity-70 ml-1">Prestavite drsnik</span>
+                    </h3>
+                    <input type="range" id="time-slider" min="0" max="23" value="0"
+                        class="w-full sm:w-1/2 h-1.5 bg-white/30 rounded-lg appearance-none cursor-pointer outline-none">
+                </div>
+                <div class="h-28 sm:h-36 w-full relative">
+                    <canvas id="hourly-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Bottom Section: 10 day forecast cards -->
+            <div class="shrink-0 relative">
+                <div class="flex items-center justify-between mb-2 sm:mb-4">
+                    <h3 class="text-sm sm:text-base font-semibold flex items-center gap-2 drop-shadow">
+                        <i data-lucide="calendar-days" class="w-4 h-4 sm:w-5 sm:h-5 text-purple-200"></i>
+                        10-Dnevna Napoved
+                    </h3>
+                    <div class="flex gap-2">
+                        <button type="button" id="scroll-left"
+                            class="p-1 rounded-full bg-white/10 hover:bg-white/25 transition-colors"
+                            title="Pomakni levo">
+                            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                        </button>
+                        <button type="button" id="scroll-right"
+                            class="p-1 rounded-full bg-white/10 hover:bg-white/25 transition-colors"
+                            title="Pomakni desno">
+                            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- Horizontal scrolling for days -->
+                <div id="forecast-container"
+                    class="flex gap-2 sm:gap-4 overflow-x-auto p-2 scrollbar-hide snap-x scroll-smooth">
+                    <!-- Cards injection via JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Info Modal Overlay -->
+    <div id="info-modal"
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300 bg-black/50 backdrop-blur-sm">
+        <div id="info-modal-content"
+            class="glass-card bg-white/10 border border-white/20 p-6 rounded-3xl max-w-md w-full shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col gap-4 relative text-white">
+            <button id="close-modal"
+                class="absolute top-4 right-4 p-1 rounded-full hover:bg-white/20 transition-colors text-white/80">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-2 border-b border-white/20 pb-4">
+                <i id="modal-icon" data-lucide="info" class="w-8 h-8 text-blue-300 drop-shadow"></i>
+                <h3 id="modal-title" class="text-xl sm:text-2xl font-bold drop-shadow-md">Naslov</h3>
+            </div>
+            <p id="modal-desc" class="text-sm sm:text-base text-white/90 leading-relaxed font-light">
+                Dodatne informacije
+            </p>
+        </div>
+    </div>
+
+    <!-- App Logic -->
+    <script src="script.js"></script>
+</body>
+
+</html>

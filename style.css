@@ -1,0 +1,96 @@
+/* style.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800;900&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+.font-logo {
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    /* Smooth transition when weather background changes */
+    transition: background 1.5s ease-in-out;
+}
+
+/* Glassmorphism Main Container */
+.glassmorphism {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+/* Specific Glass Cards */
+.glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
+}
+
+.glass-card:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Dynamic Gradients based on weather */
+/* Dynamic Gradients based on weather */
+body {
+    background: transparent;
+}
+
+/* Base generic - only pure classes, no pseudo elements needed now due to JS layers */
+.bg-sunny {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+}
+
+.bg-night {
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+}
+
+.bg-cloudy {
+    background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+}
+
+.bg-rainy {
+    background: linear-gradient(135deg, #2b5876 0%, #4e4376 100%);
+}
+
+.bg-snowy {
+    background: linear-gradient(135deg, #134e5e 0%, #71b280 100%);
+}
+
+.bg-thunder {
+    background: linear-gradient(135deg, #141e30 0%, #243b55 100%);
+}
+
+/* Animation utilities */
+.fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Scrollbar Hiding for Horizontol List */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}
