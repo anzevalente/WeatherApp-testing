@@ -89,42 +89,51 @@ function getWardrobeAdvice(temp, code, isDay) {
 
 // --- Background Fading Logic ---
 function triggerBackgroundFade(bgClass) {
-    let bgBase = document.getElementById('bg-base');
-    let bgFade = document.getElementById('bg-fade');
+    let bgContainer = document.getElementById('bg-container');
 
-    // Inject layers if they don't exist yet
-    if (!bgBase) {
-        bgBase = document.createElement('div');
-        bgBase.id = 'bg-base';
-        bgBase.className = `fixed inset-0 w-screen h-screen -z-20 ${bgClass}`;
-        document.body.prepend(bgBase);
+    if (!bgContainer) {
+        // V primeru da še obstajajo stare plasti od prej, jih počistimo
+        const oldBase = document.getElementById('bg-base');
+        if (oldBase) oldBase.remove();
+        const oldFade = document.getElementById('bg-fade');
+        if (oldFade) oldFade.remove();
 
-        bgFade = document.createElement('div');
-        bgFade.id = 'bg-fade';
-        bgFade.className = `fixed inset-0 w-screen h-screen -z-10 transition-opacity duration-1000 ease-in-out opacity-0`;
-        document.body.prepend(bgFade);
+        bgContainer = document.createElement('div');
+        bgContainer.id = 'bg-container';
+        bgContainer.className = 'fixed inset-0 w-screen h-screen -z-20 bg-gray-900 overflow-hidden';
+        document.body.prepend(bgContainer);
 
-        bgBase.setAttribute('data-bg', bgClass);
+        const initialBg = document.createElement('div');
+        initialBg.className = `absolute inset-0 w-full h-full ${bgClass} opacity-100`;
+        initialBg.setAttribute('data-bg', bgClass);
+        bgContainer.appendChild(initialBg);
     } else {
-        const currentBg = bgBase.getAttribute('data-bg');
-        if (currentBg !== bgClass) {
-            bgFade.style.transition = 'none';
-            bgFade.className = `fixed inset-0 w-screen h-screen -z-10 opacity-0 ${bgClass}`;
-            void bgFade.offsetWidth; // Force reflow
+        const currentTop = bgContainer.lastElementChild;
+        if (!currentTop || currentTop.getAttribute('data-bg') !== bgClass) {
+            // Dodamo novo plast čez obstoječo
+            const newBg = document.createElement('div');
+            newBg.className = `absolute inset-0 w-full h-full ${bgClass} transition-opacity duration-[800ms] ease-in-out opacity-0`;
+            newBg.setAttribute('data-bg', bgClass);
+            bgContainer.appendChild(newBg);
 
-            bgFade.style.transition = 'opacity 1s ease-in-out';
-            bgFade.style.opacity = '1';
+            void newBg.offsetWidth; // Force reflow za animacijo
+            newBg.style.opacity = '1';
 
+            // Počistimo prejšnje stare plasti (da preprečimo nabiranje DOM elementov), ko je ta dokončno vidna
             setTimeout(() => {
-                bgBase.className = `fixed inset-0 w-screen h-screen -z-20 ${bgClass}`;
-                bgBase.setAttribute('data-bg', bgClass);
-                bgFade.style.transition = 'none';
-                bgFade.style.opacity = '0';
-            }, 1000);
+                if (newBg.parentNode) {
+                    let prev = newBg.previousElementSibling;
+                    while (prev) {
+                        const toRemove = prev;
+                        prev = prev.previousElementSibling;
+                        toRemove.remove();
+                    }
+                }
+            }, 850);
         }
     }
     // Update body styling but respect mobile scroll properties set in HTML
-    document.body.className = `antialiased min-h-screen sm:h-screen overflow-y-auto sm:overflow-hidden transition-colors duration-1000 text-white flex items-start sm:items-center justify-center p-2 sm:p-4`;
+    document.body.className = `antialiased select-none min-h-screen sm:h-screen overflow-y-auto sm:overflow-hidden transition-colors duration-1000 bg-gray-900 text-white flex items-start sm:items-center justify-center p-2 sm:p-4`;
 }
 
 // --- Hobby & Astro Logic ---
@@ -229,8 +238,20 @@ const init = () => {
     // App Initialization
     if ("geolocation" in navigator) {
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                fetchWeather(position.coords.latitude, position.coords.longitude, "Moja Lokacija");
+            async (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                let locName = DEFAULT_LOC.name;
+                try {
+                    const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=sl`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        locName = data.city || data.locality || data.principalSubdivision || DEFAULT_LOC.name;
+                    }
+                } catch (err) {
+                    console.warn("Napaka pri pridobivanju imena lokacije:", err);
+                }
+                fetchWeather(lat, lon, locName);
             },
             (error) => {
                 console.warn("Geolokacija zavrnjena ali pa je prišlo do napake. Uporabljam privzeto lokacijo.");
@@ -247,7 +268,7 @@ const init = () => {
 const fetchWeather = async (lat, lon, cityName) => {
     showLoading();
     try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,is_day,cloud_cover&hourly=temperature_2m,weather_code,relative_humidity_2m,cloud_cover,wind_speed_10m,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max,sunrise,sunset,precipitation_sum,wind_speed_10m_max&timezone=auto&forecast_days=10`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,is_day,cloud_cover&hourly=temperature_2m,weather_code,relative_humidity_2m,cloud_cover,wind_speed_10m,is_day,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max,sunrise,sunset,precipitation_sum,wind_speed_10m_max&timezone=auto&forecast_days=10`;
         const res = await fetch(url);
 
         if (!res.ok) throw new Error("Napaka pri pridobivanju vremenskih podatkov iz API-ja.");
@@ -490,20 +511,11 @@ const renderApp = (dayIndex = 0) => {
 const renderChart = (hourly, dayIndex, targetDateStr) => {
     const ctx = document.getElementById('hourly-chart').getContext('2d');
 
-    let startIndex = 0;
-    let labelPrefix = "";
+    // Za vsak dan želimo poiskati indeks, ki se prične opolnoči tarčnega dneva
+    let startIndex = hourly.time.findIndex(t => t.startsWith(targetDateStr));
+    if (startIndex === -1) startIndex = 0; // fallback error handled
 
-    if (dayIndex === 0) {
-        // Today: From current time onwards
-        const now = new Date();
-        startIndex = hourly.time.findIndex(t => new Date(t) >= now);
-        if (startIndex === -1) startIndex = 0;
-        labelPrefix = "Naslednjih 24 ur";
-    } else {
-        // Future Day: 00:00 to 23:00 of that specific day
-        startIndex = hourly.time.findIndex(t => t.startsWith(targetDateStr));
-        labelPrefix = "Potek dneva";
-    }
+    let labelPrefix = dayIndex === 0 ? "Današnji potek" : "Potek dneva";
 
     // Select strictly 24 slices (or fewer if at the end of array)
     const sliceEnd = Math.min(startIndex + 24, hourly.time.length);
@@ -538,10 +550,49 @@ const renderChart = (hourly, dayIndex, targetDateStr) => {
                 fill: true
             }]
         },
+        plugins: [{
+            id: 'verticalLine',
+            afterDraw: chart => {
+                if (chart.options.plugins.verticalLine && chart.options.plugins.verticalLine.activeIndex !== undefined) {
+                    const activeIndex = chart.options.plugins.verticalLine.activeIndex;
+                    const meta = chart.getDatasetMeta(0);
+                    if (meta && meta.data && activeIndex >= 0 && activeIndex < meta.data.length) {
+                        const x = meta.data[activeIndex].x;
+                        const topY = chart.scales.y.top;
+                        const bottomY = chart.scales.y.bottom;
+                        const y = meta.data[activeIndex].y;
+
+                        const ctx = chart.ctx;
+                        ctx.save();
+
+                        // Narisanje črtkane črte
+                        ctx.beginPath();
+                        ctx.moveTo(x, topY);
+                        ctx.lineTo(x, bottomY);
+                        ctx.lineWidth = 1.5;
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                        ctx.setLineDash([4, 4]);
+                        ctx.stroke();
+
+                        // Poudarjena pika
+                        ctx.beginPath();
+                        ctx.arc(x, y, 5, 0, 2 * Math.PI);
+                        ctx.fillStyle = '#fff';
+                        ctx.fill();
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = '#3b82f6';
+                        ctx.stroke();
+
+                        ctx.restore();
+                    }
+                }
+            }
+        }],
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
+                verticalLine: { activeIndex: 0 },
                 legend: { display: false },
                 tooltip: {
                     mode: 'index',
@@ -657,6 +708,11 @@ modal.addEventListener('click', (e) => {
 // --- Time Travel Slider Logic ---
 function setupTimeTravelSlider(dayIndex) {
     const slider = document.getElementById('time-slider');
+    const infoContainer = document.getElementById('time-travel-info');
+    if (infoContainer) {
+        infoContainer.classList.add('hidden');
+        infoContainer.classList.remove('flex');
+    }
 
     // Remove old listeners to prevent stacking
     const newSlider = slider.cloneNode(true);
@@ -684,6 +740,12 @@ function setupTimeTravelSlider(dayIndex) {
         document.getElementById('time-travel-label').textContent = 'Prestavite drsnik';
     }
 
+    // Nastavimo začetno pozicijo črte na grafu
+    if (chartInstance && chartInstance.options.plugins.verticalLine) {
+        chartInstance.options.plugins.verticalLine.activeIndex = parseInt(newSlider.value, 10);
+        chartInstance.update('none');
+    }
+
     newSlider.addEventListener('input', (e) => {
         const offset = parseInt(e.target.value, 10);
         applyTimeTravelTarget(baseHourIndex + offset);
@@ -696,26 +758,41 @@ function applyTimeTravelTarget(targetIndex) {
 
     const timeIso = hourly.time[targetIndex];
     const temp = hourly.temperature_2m[targetIndex];
+    const precip = hourly.precipitation ? hourly.precipitation[targetIndex] : 0;
     const code = hourly.weather_code[targetIndex];
     const isDay = hourly.is_day[targetIndex] === 1;
 
     const info = getWeatherInfo(code, isDay);
-
-    // Temporarily Override Main UI
-    document.getElementById('current-temp').textContent = formatTemp(temp);
-    document.getElementById('current-desc').textContent = info.desc;
-
-    // Update main icon
-    const iconContainer = document.getElementById('current-icon-container');
-    const isBrightIcon = (isDay && (info.icon === 'sun' || info.icon === 'cloud-sun'));
-    iconContainer.innerHTML = `<i data-lucide="${info.icon}" class="w-16 h-16 sm:w-20 sm:h-20 ${isBrightIcon ? 'text-yellow-400' : 'text-white'} drop-shadow-2xl"></i>`;
-    lucide.createIcons();
 
     // Update label
     const dateObj = new Date(timeIso);
     const dayName = getDayName(timeIso, true);
     const timeStr = `${dateObj.getHours().toString().padStart(2, '0')}:00`;
     document.getElementById('time-travel-label').textContent = `čas: ${dayName}, ${timeStr}`;
+
+    // Update vertical line on chart
+    if (chartInstance && chartInstance.options.plugins.verticalLine) {
+        const slider = document.getElementById('time-slider');
+        chartInstance.options.plugins.verticalLine.activeIndex = parseInt(slider.value, 10);
+        chartInstance.update('none');
+    }
+
+    // Show isolated time travel info
+    const infoContainer = document.getElementById('time-travel-info');
+    if (infoContainer) {
+        infoContainer.classList.remove('hidden');
+        infoContainer.classList.add('flex');
+
+        document.getElementById('time-travel-temp').textContent = formatTemp(temp);
+        document.getElementById('time-travel-precip').textContent = precip.toFixed(1) + ' mm';
+
+        const iconEl = document.getElementById('time-travel-icon');
+        iconEl.setAttribute('data-lucide', info.icon);
+        const isBrightIcon = (isDay && (info.icon === 'sun' || info.icon === 'cloud-sun'));
+        iconEl.className = `w-4 h-4 sm:w-5 sm:h-5 ${isBrightIcon ? 'text-yellow-400' : 'text-white'}`;
+
+        lucide.createIcons();
+    }
 
     // Change background smoothly
     triggerBackgroundFade(info.bgClass);

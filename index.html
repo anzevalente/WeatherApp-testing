@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vreme Maribor, Ljubljana in vsa Slovenija | PureCast Napoved</title>
+    <title>PureCast | Vremenska napoved po celotni Evropi</title>
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="PureCastlogo2-removebg.png">
 
@@ -81,7 +81,7 @@
 </head>
 
 <body id="app-body"
-    class="antialiased min-h-screen sm:h-screen overflow-y-auto sm:overflow-hidden transition-colors duration-1000 bg-gray-900 text-white flex items-start sm:items-center justify-center p-2 sm:p-4">
+    class="antialiased select-none min-h-screen sm:h-screen overflow-y-auto sm:overflow-hidden transition-colors duration-1000 bg-gray-900 text-white flex items-start sm:items-center justify-center p-2 sm:p-4">
 
     <!-- Hidden Semantic H1 (Highly Optimized for Search Engines) -->
     <h1 class="sr-only">Vreme Maribor, Ljubljana, Celje in natančna vremenska napoved za celotno Slovenijo - PureCast
@@ -250,14 +250,25 @@
 
             <!-- Middle Section: Time Travel & 24 Hours Chart -->
             <div class="glass-card p-3 sm:p-4 rounded-3xl shrink-0">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-4 gap-2">
-                    <h3 class="text-sm sm:text-base font-semibold flex items-center gap-2 drop-shadow">
-                        <i data-lucide="fast-forward" class="w-4 h-4 sm:w-5 sm:h-5 text-blue-200"></i>
-                        Časovni Stroj <span id="time-travel-label"
-                            class="text-xs font-normal opacity-70 ml-1">Prestavite drsnik</span>
-                    </h3>
+                <div
+                    class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-4 gap-2 w-full">
+                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                        <h3 class="text-sm sm:text-base font-semibold flex items-center gap-2 drop-shadow shrink-0">
+                            <i data-lucide="fast-forward" class="w-4 h-4 sm:w-5 sm:h-5 text-blue-200"></i>
+                            Časovni Stroj <span id="time-travel-label"
+                                class="text-xs font-normal opacity-70 ml-1">Prestavite drsnik</span>
+                        </h3>
+                        <div id="time-travel-info"
+                            class="hidden items-center gap-2 text-xs sm:text-sm bg-white/10 px-2 py-1 rounded-xl border border-white/10 shadow-sm">
+                            <i id="time-travel-icon" data-lucide="sun" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                            <span id="time-travel-temp" class="font-bold">--°</span>
+                            <span class="opacity-30">|</span>
+                            <i data-lucide="cloud-rain" class="w-4 h-4 sm:w-5 sm:h-5 text-blue-300"></i>
+                            <span id="time-travel-precip" class="font-bold">0 mm</span>
+                        </div>
+                    </div>
                     <input type="range" id="time-slider" min="0" max="23" value="0"
-                        class="w-full sm:w-1/2 h-1.5 bg-white/30 rounded-lg appearance-none cursor-pointer outline-none">
+                        class="w-full sm:w-1/3 md:w-1/2 h-1.5 bg-white/30 rounded-lg appearance-none cursor-pointer outline-none shrink-0 mt-1 sm:mt-0">
                 </div>
                 <div class="h-28 sm:h-36 w-full relative">
                     <canvas id="hourly-chart"></canvas>
