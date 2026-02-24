@@ -551,19 +551,37 @@ const renderChart = (hourly, dayIndex, targetDateStr) => {
             }]
         },
         plugins: [{
-            id: 'verticalLine',
+            id: 'verticalLineAndLabels',
             afterDraw: chart => {
+                const ctx = chart.ctx;
+                ctx.save();
+
+                const meta = chart.getDatasetMeta(0);
+
+                // 1. Prikaz temperature (številk) neposredno nad vsako točko
+                // Prikaže se samo na širših napravah (500px in več)
+                if (window.innerWidth >= 500 && meta && meta.data) {
+                    ctx.font = "bold 11px Inter, sans-serif";
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+
+                    meta.data.forEach((point, index) => {
+                        const temp = chart.data.datasets[0].data[index];
+                        const x = point.x;
+                        const y = point.y;
+                        ctx.fillText(temp + '°', x, y - 8);
+                    });
+                }
+
+                // 2. Narisanje navpične črte za časovni stroj
                 if (chart.options.plugins.verticalLine && chart.options.plugins.verticalLine.activeIndex !== undefined) {
                     const activeIndex = chart.options.plugins.verticalLine.activeIndex;
-                    const meta = chart.getDatasetMeta(0);
                     if (meta && meta.data && activeIndex >= 0 && activeIndex < meta.data.length) {
                         const x = meta.data[activeIndex].x;
                         const topY = chart.scales.y.top;
                         const bottomY = chart.scales.y.bottom;
                         const y = meta.data[activeIndex].y;
-
-                        const ctx = chart.ctx;
-                        ctx.save();
 
                         // Narisanje črtkane črte
                         ctx.beginPath();
@@ -582,10 +600,29 @@ const renderChart = (hourly, dayIndex, targetDateStr) => {
                         ctx.lineWidth = 2;
                         ctx.strokeStyle = '#3b82f6';
                         ctx.stroke();
-
-                        ctx.restore();
                     }
                 }
+
+                // 3. Narisanje TRENUTNE REALNE URE (fiksna črta za realni čas, če je na grafu danes)
+                if (chart.options.plugins.realTimeLine && chart.options.plugins.realTimeLine.realIndex !== undefined) {
+                    const realIndex = chart.options.plugins.realTimeLine.realIndex;
+                    if (meta && meta.data && realIndex >= 0 && realIndex < meta.data.length) {
+                        const x = meta.data[realIndex].x;
+                        const topY = chart.scales.y.top;
+                        const bottomY = chart.scales.y.bottom;
+
+                        // Narisanje suptilne neprekinjene črte za realni čas
+                        ctx.beginPath();
+                        ctx.moveTo(x, topY);
+                        ctx.lineTo(x, bottomY);
+                        ctx.lineWidth = 1.5;
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; // Bolj suptilna, nevsiljiva barva (polprosojna bela)
+                        ctx.setLineDash([]);
+                        ctx.stroke();
+                    }
+                }
+
+                ctx.restore();
             }
         }],
         options: {
@@ -593,6 +630,7 @@ const renderChart = (hourly, dayIndex, targetDateStr) => {
             maintainAspectRatio: false,
             plugins: {
                 verticalLine: { activeIndex: 0 },
+                realTimeLine: { realIndex: undefined },
                 legend: { display: false },
                 tooltip: {
                     mode: 'index',
@@ -615,12 +653,24 @@ const renderChart = (hourly, dayIndex, targetDateStr) => {
                     ticks: { maxTicksLimit: 8, color: 'rgba(255,255,255,0.8)' }
                 },
                 y: {
+                    suggestedMax: Math.max(...temps) + 1,
+                    suggestedMin: Math.min(...temps) - 1,
                     grid: { color: 'rgba(255,255,255,0.2)', drawBorder: false },
-                    ticks: { callback: (value) => value.toString().replace('-', '−') + '°', color: 'rgba(255,255,255,0.8)' }
+                    ticks: { maxTicksLimit: 6, callback: (value) => value.toString().replace('-', '−') + '°', color: 'rgba(255,255,255,0.8)' }
                 }
             }
         }
     });
+
+    // Če smo na prvem dnevu (Danes), preverimo katera ura je dejansko sedaj in jo nastavimo v graf
+    if (dayIndex === 0) {
+        const nowHourStr = new Date().getHours() + ':00';
+        const nowIndex = chartInstance.data.labels.findIndex(label => label === nowHourStr);
+        if (nowIndex !== -1) {
+            chartInstance.options.plugins.realTimeLine.realIndex = nowIndex;
+            chartInstance.update('none');
+        }
+    }
 };
 
 // Render 10-Day Forecast horizontally
@@ -642,7 +692,7 @@ const renderForecast = (daily, activeDayIndex = 0) => {
 
         const card = document.createElement('div');
         // Smoother scaling and better active styling
-        const baseClasses = 'glass-card min-w-[90px] sm:min-w-[110px] rounded-2xl p-3 sm:p-4 flex flex-col items-center justify-center snap-start transition-all duration-300 transform cursor-pointer ';
+        const baseClasses = 'glass-card min-w-[90px] sm:min-w-[110px] shrink-0 rounded-2xl p-3 sm:p-4 flex flex-col items-center justify-center snap-start transition-all duration-300 transform cursor-pointer ';
         // Made active state much cleaner: no thick border all around, no huge shadow.
         const activeClasses = isActive
             ? 'bg-white/20 shadow-md border-b-[3px] border-b-white/60 border-t border-t-white/10 border-l border-l-white/10 border-r border-r-white/10 scale-100'

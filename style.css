@@ -93,4 +93,8 @@ body {
     /* IE and Edge */
     scrollbar-width: none;
     /* Firefox */
+    overflow-x: auto !important;
+    /* Force always scrollable on X */
+    -webkit-overflow-scrolling: touch;
+    /* Smooth scroll on mobile */
 }

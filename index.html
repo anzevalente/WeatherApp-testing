@@ -53,9 +53,8 @@
 
     <!-- Security: Content Security Policy (CSP) -->
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com; img-src 'self' data: https:; font-src 'self' data:;">
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com https://api.bigdatacloud.net https://cdn.jsdelivr.net https://unpkg.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com;">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="X-Frame-Options" content="DENY">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -276,7 +275,7 @@
             </div>
 
             <!-- Bottom Section: 10 day forecast cards -->
-            <div class="shrink-0 relative">
+            <div class="shrink-0 relative w-full overflow-hidden">
                 <div class="flex items-center justify-between mb-2 sm:mb-4">
                     <h3 class="text-sm sm:text-base font-semibold flex items-center gap-2 drop-shadow">
                         <i data-lucide="calendar-days" class="w-4 h-4 sm:w-5 sm:h-5 text-purple-200"></i>
@@ -297,7 +296,8 @@
                 </div>
                 <!-- Horizontal scrolling for days -->
                 <div id="forecast-container"
-                    class="flex gap-2 sm:gap-4 overflow-x-auto p-2 scrollbar-hide snap-x scroll-smooth">
+                    class="flex gap-2 sm:gap-4 overflow-x-auto overflow-y-hidden p-2 scrollbar-hide snap-x scroll-smooth w-full flex-nowrap"
+                    style="-webkit-overflow-scrolling: touch;">
                     <!-- Cards injection via JS -->
                 </div>
             </div>
